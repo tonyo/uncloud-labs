@@ -23,7 +23,7 @@ playground:
               default: true
               welcome: "Welcome to the Uncloud playground \U0001F64C\n\nYou’re currently on a control node of an initialized Uncloud cluster with 2 server nodes.\n\nTry out some of these commands:\n\n# List all machines in the cluster\nuc machine ls\n\n# Run an Nginx instance in the cluster\nuc run nginx:latest\n\n# Run an Nginx instance and make it reachable via the provided hostname\nuc run nginx:latest -n web -p app.example.com:80/http\n\n# Verify that Nginx is working by sending an HTTP request with the correct \"Host\" header\ncurl -H 'Host: app.example.com' server-1\n# The webpage will also be available in the \"WebServer\" tab above.\n\n# Open a shell inside the Nginx container\nuc exec web\n\n# Scale the Nginx service from 1 to 2 containers (each running on a different server node)\nuc scale web 2\n\n---\nAbout Uncloud: https://github.com/psviderski/uncloud/  \nDocumentation: https://uncloud.run/docs/\n"
           drives:
-            - source: docker
+            - source: oci://ghcr.io/tonyo/uncloud-playgrounds/rootfs:uncloud-devmachine
               mount: /
               size: 10GIB
           network:
