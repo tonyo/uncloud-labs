@@ -37,7 +37,7 @@ playground:
             - name: root
             - name: laborant
               default: true
-              welcome: "This is a server managed by Uncloud \U0001F680\n\nIt's recommended to use `uc` command-line client from the `dev-machine` instance to\ninspect and manage workloads on this machine, but you can of course directly experiment with this system as well.  \n\n---\nAbout Uncloud: https://github.com/psviderski/uncloud/\nDocumentation: https://uncloud.run/docs/"
+              welcome: "This is a server managed by Uncloud \U0001F680\n\nIt's recommended to use `uc` command-line client from the `dev-machine` instance to\ninspect and manage workloads on this machine, but you can of course directly experiment\nwith this system as well.  \n\n---\nAbout Uncloud: https://github.com/psviderski/uncloud/\nDocumentation: https://uncloud.run/docs/"
           drives:
             - source: oci://ghcr.io/tonyo/uncloud-playgrounds/rootfs:uncloud-server
               mount: /
@@ -53,7 +53,7 @@ playground:
             - name: root
             - name: laborant
               default: true
-              welcome: "This is a server managed by Uncloud \U0001F680\n\nIt's recommended to use `uc` command-line client from the `dev-machine` instance to\ninspect and manage workloads on this machine, but you can of course directly experiment with this system as well.  \n\n---\nAbout Uncloud: https://github.com/psviderski/uncloud/\nDocumentation: https://uncloud.run/docs/"
+              welcome: "This is a server managed by Uncloud \U0001F680\n\nIt's recommended to use `uc` command-line client from the `dev-machine` instance to\ninspect and manage workloads on this machine, but you can of course directly experiment\nwith this system as well.  \n\n---\nAbout Uncloud: https://github.com/psviderski/uncloud/\nDocumentation: https://uncloud.run/docs/"
           drives:
             - source: oci://ghcr.io/tonyo/uncloud-playgrounds/rootfs:uncloud-server
               mount: /
