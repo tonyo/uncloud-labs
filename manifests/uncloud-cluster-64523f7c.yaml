@@ -91,12 +91,10 @@ playground:
             init: true
             user: laborant
             timeout_seconds: 300
-            needs:
-                - install_uncloud_cli
             run: |-
                 set -x
 
-                exec > /tmp/output.log 2>&1
+                exec > /tmp/init-task-output.log 2>&1
 
                 # Hosts to wait for
                 HOSTS=("server-1" "server-2")
@@ -135,16 +133,6 @@ playground:
             user: root
             timeout_seconds: 300
             run: docker pull caddy:latest
-        install_uncloud_cli:
-            name: install_uncloud_cli
-            machine: dev-machine
-            init: true
-            user: root
-            timeout_seconds: 300
-            run: |+
-                # Install CLI
-                curl -fsS https://get.uncloud.run/install.sh | sh
-
     accessControl:
         canList:
             - owner
