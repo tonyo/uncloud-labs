@@ -17,6 +17,11 @@ push-%: build-%
 	docker push $(IMAGE_REPO):$*
 .PHONY: push-%
 
+test-%: build-%
+	@test -f $*/test.sh || { echo "Error: $*/test.sh not found"; exit 1; }
+	docker run --rm $(IMAGE_REPO):$* bash -c "$$(cat $*/test.sh)"
+.PHONY: test-%
+
 ###
 
 PLAYGROUND_IDS = \
