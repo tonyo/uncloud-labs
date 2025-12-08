@@ -1,0 +1,59 @@
+kind: playground
+name: uncloud-uninitialized-cluster-cacb63ae
+base: flexbox
+title: My custom FlexBox
+categories:
+    - linux
+    - networking
+    - containers
+playground:
+    networks:
+        - name: local
+          subnet: 172.16.0.0/24
+    machines:
+        - name: box-01
+          users:
+            - name: root
+            - name: laborant
+              default: true
+          drives:
+            - source: ubuntu-24-04
+              mount: /
+              size: 30GiB
+          network:
+            interfaces:
+                - network: local
+          resources:
+            cpuCount: 4
+            ramSize: 1.5GiB
+        - name: box-02
+          users:
+            - name: root
+            - name: laborant
+              default: true
+          drives:
+            - source: rockylinux
+              mount: /
+              size: 30GiB
+          network:
+            interfaces:
+                - network: local
+          resources:
+            cpuCount: 4
+            ramSize: 1.5GiB
+    tabs:
+        - id: terminal-box-01
+          kind: terminal
+          name: box-01
+          machine: box-01
+        - id: terminal-box-02
+          kind: terminal
+          name: box-02
+          machine: box-02
+    accessControl:
+        canList:
+            - owner
+        canRead:
+            - owner
+        canStart:
+            - owner

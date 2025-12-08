@@ -25,15 +25,16 @@ test-%: build-%
 ###
 
 PLAYGROUND_IDS = \
-	uncloud-cluster-64523f7c # https://labs.iximiuz.com/playgrounds/uncloud-cluster-64523f7c
+	uncloud-cluster-64523f7c \
+	uncloud-uninitialized-cluster-cacb63ae
 
 # Save playground manifests locally
-save-playgrounds:
+pull-playgrounds:
 	@for id in $(PLAYGROUND_IDS); do \
 		labctl playground manifest $$id > manifests/$$id.yaml; \
 		echo ">>> Saved playground manifest for: $$id"; \
 	done
-.PHONY: save-playgrounds
+.PHONY: pull-playgrounds
 
 push-playgrounds:
 	@for id in $(PLAYGROUND_IDS); do \
@@ -41,3 +42,4 @@ push-playgrounds:
 		labctl playground update $$id -f ./manifests/$$id.yaml; \
 		echo ">>> Pushed playground manifest for: $$id"; \
 	done
+.PHONY: push-playgrounds

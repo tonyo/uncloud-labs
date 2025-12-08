@@ -57,7 +57,7 @@ Prerequisites:
 You can save the manifests of all the managed playgrounds locally to [`manifests/`](./manifests/) directory:
 
 ```bash
-make save-playgrounds
+make pull-playgrounds
 ```
 
 This is currently done purely for backup and version tracking reasons.
