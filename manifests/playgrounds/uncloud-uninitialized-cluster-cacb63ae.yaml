@@ -1,59 +1,97 @@
 kind: playground
 name: uncloud-uninitialized-cluster-cacb63ae
 base: flexbox
-title: My custom FlexBox
+title: "Uncloud: Uninitialized Cluster"
+description: This is a helper playground used as a starting point for some Uncloud [tutorials](https://labs.iximiuz.com/tutorials).
 categories:
-    - linux
-    - networking
-    - containers
+  - linux
+  - networking
+  - containers
 playground:
-    networks:
-        - name: local
-          subnet: 172.16.0.0/24
-    machines:
-        - name: box-01
-          users:
-            - name: root
-            - name: laborant
-              default: true
-          drives:
-            - source: ubuntu-24-04
-              mount: /
-              size: 30GiB
-          network:
-            interfaces:
-                - network: local
-          resources:
-            cpuCount: 4
-            ramSize: 1.5GiB
-        - name: box-02
-          users:
-            - name: root
-            - name: laborant
-              default: true
-          drives:
-            - source: rockylinux
-              mount: /
-              size: 30GiB
-          network:
-            interfaces:
-                - network: local
-          resources:
-            cpuCount: 4
-            ramSize: 1.5GiB
-    tabs:
-        - id: terminal-box-01
-          kind: terminal
-          name: box-01
-          machine: box-01
-        - id: terminal-box-02
-          kind: terminal
-          name: box-02
-          machine: box-02
-    accessControl:
-        canList:
-            - owner
-        canRead:
-            - owner
-        canStart:
-            - owner
+  networks:
+    - name: local
+      subnet: 172.16.0.0/24
+  machines:
+    - name: dev-machine
+      users:
+        - name: root
+        - name: laborant
+          default: true
+          welcome: "Welcome to the Uncloud playground \U0001F64C\n\nYou’re currently on a control node of an initialized Uncloud cluster with 2 server nodes.\n\nTry out some of these commands:\n\n# List all machines in the cluster\nuc machine ls\n\n# Run an Nginx instance in the cluster\nuc run nginx:latest\n\n# Run an Nginx instance and make it reachable via the provided hostname\nuc run nginx:latest -n web -p app.example.com:80/http\n\n# Verify that Nginx is working by sending an HTTP request with the correct \"Host\" header\ncurl -H 'Host: app.example.com' server-1\n# The webpage will also be available in the \"WebServer\" tab above.\n\n# Open a shell inside the Nginx container\nuc exec web\n\n# Scale the Nginx service from 1 to 2 containers (each running on a different server node)\nuc scale web 2\n\n---\nAbout Uncloud: https://github.com/psviderski/uncloud/  \nDocumentation: https://uncloud.run/docs/\n"
+      drives:
+        - source: oci://ghcr.io/tonyo/uncloud-playgrounds/rootfs:uncloud-devmachine
+          mount: /
+          size: 10GIB
+      network:
+        interfaces:
+          - network: local
+      resources:
+        cpuCount: 1
+        ramSize: 1GiB
+    - name: server-1
+      users:
+        - name: root
+        - name: laborant
+          default: true
+          welcome: "This is a server managed by Uncloud \U0001F680\n\nIt's recommended to use `uc` command-line client from the `dev-machine` instance to\ninspect and manage workloads on this machine, but you can of course directly experiment\nwith this system as well.  \n\n---\nAbout Uncloud: https://github.com/psviderski/uncloud/\nDocumentation: https://uncloud.run/docs/"
+      drives:
+        - source: oci://ghcr.io/tonyo/uncloud-playgrounds/rootfs:uncloud-server
+          mount: /
+          size: 10GIB
+      network:
+        interfaces:
+          - network: local
+      resources:
+        cpuCount: 1
+        ramSize: 2GiB
+    - name: server-2
+      users:
+        - name: root
+        - name: laborant
+          default: true
+          welcome: "This is a server managed by Uncloud \U0001F680\n\nIt's recommended to use `uc` command-line client from the `dev-machine` instance to\ninspect and manage workloads on this machine, but you can of course directly experiment\nwith this system as well.  \n\n---\nAbout Uncloud: https://github.com/psviderski/uncloud/\nDocumentation: https://uncloud.run/docs/"
+      drives:
+        - source: oci://ghcr.io/tonyo/uncloud-playgrounds/rootfs:uncloud-server
+          mount: /
+          size: 10GIB
+      network:
+        interfaces:
+          - network: local
+      resources:
+        cpuCount: 1
+        ramSize: 2GiB
+  tabs:
+    - id: terminal-dev-machine
+      kind: terminal
+      name: dev-machine
+      machine: dev-machine
+    - id: terminal-server-1
+      kind: terminal
+      name: server-1
+      machine: server-1
+    - id: terminal-server-2
+      kind: terminal
+      name: server-2
+      machine: server-2
+  initTasks:
+    init_server_1_1:
+      name: init_server_1_1
+      machine: server-1
+      init: true
+      user: root
+      timeout_seconds: 300
+      run: docker pull caddy:latest
+    init_server_2_1:
+      name: init_server_2_1
+      machine: server-2
+      init: true
+      user: root
+      timeout_seconds: 300
+      run: docker pull caddy:latest
+  accessControl:
+    canList:
+      - anyone
+    canRead:
+      - anyone
+    canStart:
+      - anyone
