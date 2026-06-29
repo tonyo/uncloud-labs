@@ -21,7 +21,7 @@ playground:
               default: true
               welcome: "Welcome to the Uncloud playground \U0001F64C\n\nYou’re currently on a control node of an initialized Uncloud cluster with one server node (server-1).\n\nIn the app/ directory you can find the source code of a Python web application implemented with the Django framework. With Uncloud you can deploy this application directly to the machines in your Uncloud cluster, without the need for external components like container registries. Follow the linked tutorial to learn how!\n\n---\nAbout Uncloud: https://github.com/psviderski/uncloud/  \nDocumentation: https://uncloud.run/docs/"
           drives:
-            - source: oci://ghcr.io/unlabs-dev/uncloud-labs/rootfs:uncloud-django-app-v0.19.0
+            - source: oci://ghcr.io/unlabs-dev/uncloud-labs/rootfs:uncloud-django-app-v0.20.0
               mount: /
               size: 10GIB
           network:
@@ -37,7 +37,7 @@ playground:
               default: true
               welcome: "This is a server managed by Uncloud \U0001F680\n\nIt's recommended to use `uc` command-line client from the `dev-machine` instance to\ninspect and manage workloads on this machine, but you can of course directly experiment\nwith this system as well.  \n\n---\nAbout Uncloud: https://github.com/psviderski/uncloud/\nDocumentation: https://uncloud.run/docs/"
           drives:
-            - source: oci://ghcr.io/unlabs-dev/uncloud-labs/rootfs:uncloud-server-v0.19.0
+            - source: oci://ghcr.io/unlabs-dev/uncloud-labs/rootfs:uncloud-server-v0.20.0
               mount: /
               size: 10GIB
           network:
@@ -53,7 +53,7 @@ playground:
               default: true
               welcome: This is a clean server that can be added to the Uncloud cluster.
           drives:
-            - source: oci://ghcr.io/unlabs-dev/uncloud-labs/rootfs:uncloud-server-v0.19.0
+            - source: oci://ghcr.io/unlabs-dev/uncloud-labs/rootfs:uncloud-server-v0.20.0
               mount: /
               size: 10GIB
           network:

@@ -14,7 +14,7 @@ tagz:
   - uncloud
 
 createdAt: 2025-12-09
-updatedAt: 2025-03-21
+updatedAt: 2026-06-29
 
 cover: __static__/cluster-diagram.png
 
@@ -71,7 +71,7 @@ After you start the linked playground, you'll first see the shell on :tab{text='
 To test that the `uc` command works, run the following on :tab{text='dev-machine' machine='dev-machine'} to get the version of the Uncloud client:
 
 ```sh
-uc --version
+uc version
 ```
 
 <!-- prettier-ignore-start -->
@@ -107,18 +107,18 @@ You can get the list of machines in the cluster along with their configuration a
 
 ```
 laborant@dev-machine:~$ uc machine ls
-NAME           STATE   ADDRESS         PUBLIC IP        WIREGUARD ENDPOINTS                      MACHINE ID
-machine-incv   Up      10.210.0.1/24   -                172.16.0.3:51820, 65.109.107.161:51820   6cec579e3d6fb7ffb51c5503d163f1be
+NAME       STATE   ADDRESS         PUBLIC IP   WIREGUARD ENDPOINTS   OS                   KERNEL    ARCH    DOCKER   VERSION
+server-1   Up      10.210.0.1/24   -           172.16.0.3:51820      Ubuntu 24.04.4 LTS   6.1.167   amd64   29.6.1   0.20.0
 ```
 
 As we can see, `server-1` became the first (and the only so far) machine in our new cluster. Let's break down what each column means:
 
-- `NAME: machine-incv` - The unique name of the machine in the cluster; can vary from cluster to cluster. Can be changed (see the [corresponding section below](#updating-cluster-machines))
+- `NAME: server-1` - The name of the machine in the cluster. Can be changed via [`uc machine update`](https://uncloud.run/docs/cli-reference/uc_machine_update) command.
 - `STATE: Up` - The current state of the machine. "Up" means the machine is running and the Uncloud daemon is active.
 - `ADDRESS: 10.210.0.1/24` - The private IP address and subnet assigned to this machine in the WireGuard mesh network. Each machine gets its own `/24` subnet (by default, 10.210.0.0/24, 10.210.1.0/24, etc.) from which container IP addresses are allocated.
 - `PUBLIC IP: -` - The public IP address of the machine for ingress (if configured). Since we used `--public-ip none`, this field is empty and shows `-`.
 - `WIREGUARD ENDPOINTS` - The network endpoints where this machine's WireGuard interface can be reached by other machines in the cluster. This includes both private and public IP addresses with the WireGuard port.
-- `MACHINE ID` - A unique identifier for the machine; it doesn't change throughout the lifecycle of the machine.
+- `OS`, `KERNEL`, `ARCH`, `DOCKER`, `VERSION` - Information about the machine's operating system, kernel version, architecture, Docker version, and Uncloud version.
 
 ## Adding Another Machine to the Cluster
 
@@ -136,34 +136,12 @@ Let's check the current state of the cluster:
 
 ```
 laborant@dev-machine:~$ uc machine ls
-NAME           STATE   ADDRESS         PUBLIC IP        WIREGUARD ENDPOINTS                      MACHINE ID
-machine-incv   Up      10.210.0.1/24   -                172.16.0.3:51820, 65.109.107.161:51820   6cec579e3d6fb7ffb51c5503d163f1be
-machine-m4wy   Up      10.210.1.1/24   -                172.16.0.4:51820, 65.109.107.161:51820   e84e115eff8570ecccc54947aa482f5c
+NAME       STATE   ADDRESS         PUBLIC IP   WIREGUARD ENDPOINTS   OS                   KERNEL    ARCH    DOCKER   VERSION
+server-1   Up      10.210.0.1/24   -           172.16.0.3:51820      Ubuntu 24.04.4 LTS   6.1.167   amd64   29.6.1   0.20.0
+server-2   Up      10.210.1.1/24   -           172.16.0.4:51820      Ubuntu 24.04.4 LTS   6.1.167   amd64   29.6.1   0.20.0
 ```
 
 Our cluster now consists of two nodes 🎉
-
-## Updating Cluster Machines
-
-By default, cluster machines are assigned internal names with randomized suffixes such as `machine-incv` or `machine-m4wy`.
-It is possible to override those names by using `-n/--name` option during `add` or `init` steps.
-
-You can also rename the cluster nodes via `uc machine rename` command, for example:
-
-```
-laborant@dev-machine:~$ uc machine rename machine-incv server-1
-Machine "machine-incv" renamed to "server-1" (ID: 42866c05a37171dbbc1165216e8f886e)
-
-laborant@dev-machine:~$ uc machine rename machine-m4wy server-2
-Machine "machine-m4wy" renamed to "server-2" (ID: 4c453ff7a1c870456cfd69f78e74a34a)
-
-laborant@dev-machine:~$ uc machine ls
-NAME   STATE   ADDRESS         PUBLIC IP        WIREGUARD ENDPOINTS                      MACHINE ID
-server-1     Up      10.210.0.1/24   -                172.16.0.3:51820, 65.109.107.161:51820   42866c05a37171dbbc1165216e8f886e
-server-2     Up      10.210.1.1/24   -                172.16.0.4:51820, 65.109.107.161:51820   4c453ff7a1c870456cfd69f78e74a34a
-```
-
-If you want to change other properties of the machines such as public IP address, use [`uc machine update`](https://uncloud.run/docs/cli-reference/uc_machine_update) command.
 
 ## Context Management and Connections
 
@@ -254,11 +232,12 @@ caddy        global       1          caddy:2.10.2
 excalidraw   replicated   1          excalidraw/excalidraw   http://excalidraw.internal → :80
 
 laborant@dev-machine:~$ uc inspect excalidraw
-Service ID: 0af10efcb5a0d9155268bbbcbfc1419f
+Service ID: d731dfebef3f394ecaf70edfcaae250f
 Name:       excalidraw
 Mode:       replicated
-CONTAINER ID   IMAGE                   CREATED         STATUS                   IP ADDRESS   MACHINE
-38410444eaf3   excalidraw/excalidraw   2 minutes ago   Up 2 minutes (healthy)   10.210.0.3   server-1
+
+CONTAINER ID   IMAGE                          CREATED          STATUS                    IP ADDRESS   MACHINE
+75e8e581824b   excalidraw/excalidraw:latest   45 seconds ago   Up 45 seconds (healthy)   10.210.1.3   server-2
 ```
 
 ### Accessing the service
