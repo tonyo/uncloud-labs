@@ -3,7 +3,7 @@
 IMAGE_REPO = ghcr.io/unlabs-dev/uncloud-labs/rootfs
 MANIFESTS_DIR = manifests
 DOCKER_BUILD_FLAGS ?=
-UNCLOUD_VERSION ?= v0.19.0
+UNCLOUD_VERSION ?= v0.20.0
 
 all:
 	exit 1
