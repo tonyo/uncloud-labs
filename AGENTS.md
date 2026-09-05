@@ -197,3 +197,8 @@ _Based on [Refactoring English: Rules for Software Tutorials](https://refactorin
 Check `vendor/iximiuz-labs/content-samples/claude/CLAUDE.md` for additional instructions.
 
 Additional skills are located in `vendor/iximiuz-labs/content-samples/claude/skills/`
+
+## Troubleshooting
+
+If you need to validate a tutorial/playground change end-to-end (e.g. `labctl` usage, `uc deploy` quirks, capturing real CLI output), see
+`docs/testing-playgrounds-with-labctl.md`. Only read it when you're actually troubleshooting this kind of issue — skip it otherwise.

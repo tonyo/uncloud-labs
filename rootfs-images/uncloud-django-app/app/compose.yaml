@@ -7,6 +7,10 @@ services:
     x-ports:
       - issue-tracker.internal:8000/http
 
+    # Run database migrations once before rolling out new containers
+    x-pre_deploy:
+      command: python manage.py migrate
+
     # Mount a named volume for the database data
     volumes:
       - db_data:/data
