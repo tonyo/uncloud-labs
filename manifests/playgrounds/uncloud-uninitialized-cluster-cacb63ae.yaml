@@ -19,7 +19,7 @@ playground:
               default: true
               welcome: "Welcome to the Uncloud playground \U0001F64C\n\nYou’re currently on a control node with the installed \"uc\" CLI client.\nThere are two servers reachable from this node: server-1 and server-2.\n\n---\nAbout Uncloud: https://github.com/psviderski/uncloud/  \nDocumentation: https://uncloud.run/docs/\n"
           drives:
-            - source: oci://ghcr.io/unlabs-dev/uncloud-labs/rootfs:uncloud-devmachine-v0.20.0
+            - source: oci://ghcr.io/unlabs-dev/uncloud-labs/rootfs:uncloud-devmachine-v0.20.0-1
               mount: /
               size: 10GIB
           network:

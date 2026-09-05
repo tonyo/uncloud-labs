@@ -4,6 +4,11 @@ IMAGE_REPO = ghcr.io/unlabs-dev/uncloud-labs/rootfs
 MANIFESTS_DIR = manifests
 DOCKER_BUILD_FLAGS ?=
 UNCLOUD_VERSION ?= v0.20.0
+# Internal build number for rootfs images. Bump and commit this when
+# rebuilding/pushing an image (e.g. a Dockerfile fix or dependency bump)
+# without changing UNCLOUD_VERSION, so the pinned tag changes too.
+BUILD_SUFFIX = 1
+IMAGE_VERSION_TAG = $(UNCLOUD_VERSION)$(if $(BUILD_SUFFIX),-$(BUILD_SUFFIX))
 
 all:
 	exit 1
@@ -15,13 +20,13 @@ build-img-%:
 		--build-arg UNCLOUD_VERSION=$(UNCLOUD_VERSION) \
 		-f ./rootfs-images/$*/Dockerfile \
 		-t $(IMAGE_REPO):$* \
-		-t $(IMAGE_REPO):$*-$(UNCLOUD_VERSION) \
+		-t $(IMAGE_REPO):$*-$(IMAGE_VERSION_TAG) \
 		.
 .PHONY: build-img-%
 
 push-img-%: build-img-%
 	docker push $(IMAGE_REPO):$*
-	docker push $(IMAGE_REPO):$*-$(UNCLOUD_VERSION)
+	docker push $(IMAGE_REPO):$*-$(IMAGE_VERSION_TAG)
 .PHONY: push-img-%
 
 test-img-%: build-img-%

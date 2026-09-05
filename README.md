@@ -43,6 +43,19 @@ make push-img-uncloud-django-app
 
 ```
 
+Each image is tagged both as `<image>` (floating) and `<image>-<UNCLOUD_VERSION>`
+(pinned — this is the tag playground manifests reference directly). If you
+need to push an updated image (Dockerfile fix, dependency bump, etc.)
+without changing `UNCLOUD_VERSION`, bump `BUILD_SUFFIX` in the [`Makefile`](./Makefile)
+and commit it, so the pinned tag changes too. Then repoint the relevant
+`manifests/playgrounds/*.yaml` entries at the new tag, e.g.:
+
+```bash
+# Makefile: BUILD_SUFFIX = 2
+make push-img-uncloud-django-app
+# => pushes rootfs:uncloud-django-app-v0.20.0-2
+```
+
 ## Material Management
 
 This section covers the management of playgrounds and tutorials hosted on iximiuz Labs.
