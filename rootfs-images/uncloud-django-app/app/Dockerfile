@@ -38,5 +38,5 @@ EXPOSE 8000
 # Declare volume for database persistence
 VOLUME ["/data"]
 
-# Run database migrations and start Gunicorn application server
-CMD ["sh", "-c", "python manage.py migrate && gunicorn --bind 0.0.0.0:8000 --workers 2 issuetracker.wsgi:application"]
+# Start Gunicorn application server (database migrations run as a pre-deploy hook, see compose.yaml)
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "issuetracker.wsgi:application"]

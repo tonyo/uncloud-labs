@@ -189,8 +189,8 @@ EXPOSE 8000
 # Declare volume for database persistence
 VOLUME ["/data"]
 
-# Run database migrations and start Gunicorn application server
-CMD ["sh", "-c", "python manage.py migrate && gunicorn --bind 0.0.0.0:8000 --workers 2 issuetracker.wsgi:application"]
+# Start Gunicorn application server (database migrations run as a pre-deploy hook, see compose.yaml)
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "--workers", "2", "issuetracker.wsgi:application"]
 ```
 
 ::remark-box
@@ -217,6 +217,10 @@ services:
     x-ports:
       - issue-tracker.internal:8000/http
 
+    # Run database migrations once before rolling out new containers
+    x-pre_deploy:
+      command: python manage.py migrate
+
     # Mount a named volume for the database data
     volumes:
       - db_data:/data
@@ -230,11 +234,24 @@ Let's break down what this configuration does:
 
 - **`build: .`** - Tells Uncloud to build a container image from the Dockerfile in the current directory
 - **`x-ports`** - Uncloud-specific extension that configures ingress routing. This makes your application reachable via the specified domain (`issue-tracker.internal`); `:8000` indicates that inside the container the Django application listens on port 8000.
+- **`x-pre_deploy`** - Uncloud-specific extension that runs a one-off command in a temporary container before the new service containers are started. We use it here to apply Django database migrations.
 - **`volumes`** - Defines a [named volume](https://uncloud.run/docs/cli-reference/uc_volume) `db_data` that is mounted to the `/data` directory inside the container. This allows the SQLite database file to persist across container restarts and deployments.
 
 ::remark-box
 **About the domain configuration**: In a real-world scenario, you would replace `issue-tracker.internal` with your actual domain name. For this tutorial environment in iximiuz Labs, we'll use `issue-tracker.internal` as it's also configured in the playground settings, which will make the app accessible via the :tab{text='Application' name='Application'} tab.
 ::
+
+### Running Migrations with a Pre-Deploy Hook
+
+Notice that our Dockerfile's `CMD` only starts Gunicorn - it doesn't run `python manage.py migrate` anymore. If we baked the migration command into `CMD`, it would re-run every time a container starts, restarts, or gets scaled to multiple replicas, which is wasteful at best and risky at worst if migrations aren't safe to run concurrently.
+
+Instead, we use Uncloud's [pre-deploy hooks](https://uncloud.run/docs/guides/deployments/pre-deploy-hooks) via the `x-pre_deploy` extension. A pre-deploy hook runs your `command` exactly once per deployment, in a temporary container built from the same image, environment, and volumes as the service, before any new service containers are created. A few things worth knowing:
+
+- If the hook command exits with a non-zero code or times out (5 minutes by default, configurable with a `timeout` field), the deployment stops immediately - no service containers are created or replaced.
+- The hook container is temporary: only changes persisted to a mounted volume (like our `db_data` volume, which is where the SQLite database lives) survive after it exits.
+- Since a hook may be re-run if a later deployment step fails, make sure your command is idempotent - which `python manage.py migrate` already is by design.
+
+With this in place, migrations are applied safely once per deployment, and the application containers only need to worry about serving traffic.
 
 ### Building and Deploying with `uc deploy`
 
@@ -254,17 +271,23 @@ You'll see output similar to:
 [+] Pushing image app/issue-tracker:2026-03-17-205422 to cluster
 
 Deployment plan
-- server-1: Create volume [name=db_data]
-- Deploy service [name=issue-tracker]
-  - server-1: Run container [image=app/issue-tracker:2026-03-17-205422]
+
++ create volume db_data on server-1
+
++ create service issue-tracker
+  │   image: app/issue-tracker:2026-03-17-205422
+  │
+  ├── ▶   run pre-deploy hook issue-tracker [python manage.py migrate] on server-1 (timeout 5m0s)
+  ╰── +   run container issue-tracker on server-1
 
 Do you want to continue?
 
 Choose [y/N]: y
 Chose: Yes!
 
-[+] Deploying services 2/2
+[+] Deploying 3/3
  ✔ Volume db_data on server-1                Created
+ ✔ Pre-deploy hook issue-tracker on server-1
  ✔ Container issue-tracker-hhk5 on server-1  Running
 ```
 
@@ -281,8 +304,9 @@ What happened under the hood when you ran `uc deploy`? That single command did t
 1. **Built and tagged the image**: Your local Docker daemon built the image from the Dockerfile and tagged it with a unique timestamp-based tag. Note that Uncloud will take care of building the image for you, so you don't need to worry about manually building or tagging it before deployment every time.
 2. **Pushed the image to the cluster**: Uncloud transferred the image directly to your cluster machines using the [unregistry](https://github.com/psviderski/unregistry) helper, without needing an external registry like Docker Hub. Only the layers that don't already exist on the target machines are transferred, making subsequent deployments much faster.
 3. **Prepared a new deployment**: Uncloud printed the list of changes and asked for your confirmation.
-4. **Started a new container**: Uncloud created and started the application container.
-5. **Configured ingress**: Uncloud automatically set up the routing so that your application is accessible via the specified domain.
+4. **Ran the pre-deploy hook**: Uncloud started a temporary container from the new image and ran `python manage.py migrate` in it, applying any pending database migrations before touching the running application.
+5. **Started a new container**: Uncloud created and started the application container.
+6. **Configured ingress**: Uncloud automatically set up the routing so that your application is accessible via the specified domain.
 
 ### Verifying the Deployment
 
@@ -317,9 +341,14 @@ Service ID: 3f11c85f774a9d07e16e90d209c1ddf0
 Name:       issue-tracker
 Mode:       replicated
 
-CONTAINER ID   IMAGE                                 CREATED         STATUS         IP ADDRESS   MACHINE
-6b32aa328c13   app/issue-tracker:2026-03-17-205422   5 minutes ago   Up 5 minutes   10.210.0.3   server-1
+CONTAINER ID   IMAGE                                 CREATED         STATUS                     HOOK         IP ADDRESS   MACHINE
+6b32aa328c13   app/issue-tracker:2026-03-17-205422   5 minutes ago   Up 5 minutes                            10.210.0.3   server-1
+9f8e2d1a4b56   app/issue-tracker:2026-03-17-205422   5 minutes ago   Exited (0) 5 minutes ago   pre-deploy                server-1
 ```
+
+::remark-box
+💡 Notice the second row: it's the pre-deploy hook container that ran `python manage.py migrate` and exited with code `0` (success). Uncloud keeps the most recent hook container around for inspection, and replaces it the next time you deploy.
+::
 
 ## Accessing Your Application
 
@@ -367,24 +396,28 @@ Great, now your application is running on the remote machine. At some point you'
 uc logs issue-tracker
 ```
 
-You will get the output produced by the app:
+You will get the output produced by the app - notice the `[pre-deploy]` tagged lines from the migration hook container, followed by the application container's own logs:
 
 ```
-Feb 22 21:51:59.434 server-1 issue-tracker[6b32a] Operations to perform:
-Feb 22 21:51:59.434 server-1 issue-tracker[6b32a]   Apply all migrations: admin, auth, contenttypes, issues, sessions
-Feb 22 21:51:59.434 server-1 issue-tracker[6b32a] Running migrations:
-Feb 22 21:51:59.438 server-1 issue-tracker[6b32a]   Applying contenttypes.0001_initial... OK
-Feb 22 21:51:59.451 server-1 issue-tracker[6b32a]   Applying auth.0001_initial... OK
-Feb 22 21:51:59.459 server-1 issue-tracker[6b32a]   Applying admin.0001_initial... OK
-Feb 22 21:51:59.469 server-1 issue-tracker[6b32a]   Applying admin.0002_logentry_remove_auto_add... OK
+Feb 22 21:51:58.921 server-1 issue-tracker/a1c3f [pre-deploy] Operations to perform:
+Feb 22 21:51:58.921 server-1 issue-tracker/a1c3f [pre-deploy]   Apply all migrations: admin, auth, contenttypes, issues, sessions
+Feb 22 21:51:58.921 server-1 issue-tracker/a1c3f [pre-deploy] Running migrations:
+Feb 22 21:51:58.925 server-1 issue-tracker/a1c3f [pre-deploy]   Applying contenttypes.0001_initial... OK
+Feb 22 21:51:58.938 server-1 issue-tracker/a1c3f [pre-deploy]   Applying auth.0001_initial... OK
+Feb 22 21:51:58.946 server-1 issue-tracker/a1c3f [pre-deploy]   Applying admin.0001_initial... OK
+Feb 22 21:51:58.956 server-1 issue-tracker/a1c3f [pre-deploy]   Applying admin.0002_logentry_remove_auto_add... OK
 ...
-Feb 22 21:51:59.629 server-1 issue-tracker[6b32a]   Applying sessions.0001_initial... OK
-Feb 22 21:51:59.821 server-1 issue-tracker[6b32a] [2026-02-22 21:51:59 +0000] [8] [INFO] Starting gunicorn 23.0.0
-Feb 22 21:51:59.821 server-1 issue-tracker[6b32a] [2026-02-22 21:51:59 +0000] [8] [INFO] Listening at: http://0.0.0.0:8000 (8)
-Feb 22 21:51:59.821 server-1 issue-tracker[6b32a] [2026-02-22 21:51:59 +0000] [8] [INFO] Using worker: sync
-Feb 22 21:51:59.823 server-1 issue-tracker[6b32a] [2026-02-22 21:51:59 +0000] [9] [INFO] Booting worker with pid: 9
-Feb 22 21:51:59.840 server-1 issue-tracker[6b32a] [2026-02-22 21:51:59 +0000] [10] [INFO] Booting worker with pid: 10
+Feb 22 21:51:59.116 server-1 issue-tracker/a1c3f [pre-deploy]   Applying sessions.0001_initial... OK
+Feb 22 21:51:59.821 server-1 issue-tracker/6b32a [2026-02-22 21:51:59 +0000] [8] [INFO] Starting gunicorn 23.0.0
+Feb 22 21:51:59.821 server-1 issue-tracker/6b32a [2026-02-22 21:51:59 +0000] [8] [INFO] Listening at: http://0.0.0.0:8000 (8)
+Feb 22 21:51:59.821 server-1 issue-tracker/6b32a [2026-02-22 21:51:59 +0000] [8] [INFO] Using worker: sync
+Feb 22 21:51:59.823 server-1 issue-tracker/6b32a [2026-02-22 21:51:59 +0000] [9] [INFO] Booting worker with pid: 9
+Feb 22 21:51:59.840 server-1 issue-tracker/6b32a [2026-02-22 21:51:59 +0000] [10] [INFO] Booting worker with pid: 10
 ```
+
+::remark-box
+💡 `issue-tracker/a1c3f` and `issue-tracker/6b32a` are two different containers - the first is the temporary pre-deploy hook container that ran the migration and exited, the second is the actual application container serving traffic.
+::
 
 `uc logs` is a powerful command that can accept a handful of arguments to control the filtering and time limits, for example:
 
